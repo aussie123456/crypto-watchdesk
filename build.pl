@@ -5,8 +5,8 @@
 # 2. Per coin: 300 daily candles + funding history (OKX), open interest (OKX), funding now (Hyperliquid).
 # 3. Momentum: swing z-score vs own 200-day return distribution, 7/30/90d vol-adjusted momentum rank,
 #    moving-average trend, 20/55-day channel breakouts, volume surge, funding crowding.
-# 4. Funding carry: daily funding for BTC/ETH/SOL on OKX, Hyperliquid, Binance, Bybit vs the 3-month T-bill.
-#    Binance and Bybit refuse US-hosted runners, so their history is carried forward from the previous data.json.
+# 4. Funding carry: daily funding for BTC/ETH/SOL on OKX, Hyperliquid, Kraken, Deribit vs the 3-month T-bill.
+#    History is carried forward from the previous data.json, so a venue that fails on one run keeps its past days.
 # Public data only. Not investment advice.
 use strict; use warnings; use JSON::PP; use File::Path qw(make_path); use POSIX qw(strftime floor);
 use Time::HiRes qw(sleep);
@@ -138,7 +138,7 @@ for my $c (@coins) {
 
 # ---------- 4. funding carry ----------
 my @CARRY = qw(BTC ETH SOL); my %carry;
-# data/carry_seed.json = funding history saved from a run that could reach every venue (Binance and Bybit refuse US-hosted runners)
+# data/carry_seed.json = funding history saved from a run that could reach every venue (fallback if a venue is unreachable)
 my $SEED = js(slurp("data/carry_seed.json")); my $all_fresh = 1;
 sub merge_daily { my ($coin, $venue, $acc) = @_;                       # $acc: date => summed rate (fraction)
   my %d; my $sd = $SEED ? $SEED->{$coin}{$venue} : undef; %d = %$sd if ref $sd eq "HASH";
@@ -154,11 +154,14 @@ for my $coin (@CARRY) {
       for (@$d) { $a{day($_->{fundingTime})} += (length($_->{realizedRate} // '') ? $_->{realizedRate} : $_->{fundingRate}) } $after = $d->[-1]{fundingTime}; last if @$d < 100; sleep(0.25) } $src{OKX} = \%a; }
   { my (%a); my $st = ($NOW - 366 * 86400) * 1000; for my $pg (1..30) { my $d = hl(qq({"type":"fundingHistory","coin":"$coin","startTime":$st})); last unless ref $d eq 'ARRAY' && @$d;
       $a{day($_->{time})} += $_->{fundingRate} for @$d; $st = $d->[-1]{time} + 1; last if @$d < 500; sleep(0.2) } $src{Hyperliquid} = \%a; }
-  { my %a; for my $pg (0..2) { my ($e, $s) = (($NOW - $pg * 122 * 86400) * 1000, ($NOW - ($pg + 1) * 122 * 86400) * 1000 + 1);   # explicit 122-day windows
-      my $d = js(curl("https://fapi.binance.com/fapi/v1/fundingRate?symbol=${coin}USDT&limit=1000&startTime=$s&endTime=$e")); last unless ref $d eq 'ARRAY' && @$d;
-      $a{day($_->{fundingTime})} += $_->{fundingRate} for @$d; sleep(0.3) } $src{Binance} = \%a; }
-  { my %a; my $d = js(curl("https://api.bybit.com/v5/market/funding/history?category=linear&symbol=${coin}USDT&limit=200")); if (ref $d eq 'HASH' && $d->{result}{list}) { $a{day($_->{fundingRateTimestamp})} += $_->{fundingRate} for @{$d->{result}{list}} } $src{Bybit} = \%a; }
-  for my $v (qw(OKX Hyperliquid Binance Bybit)) {
+  { my %a; my %KS = (BTC => 'PF_XBTUSD', ETH => 'PF_ETHUSD', SOL => 'PF_SOLUSD');                                                  # Kraken: one call returns the full hourly history
+    my $d = js(curl("https://futures.kraken.com/derivatives/api/v4/historicalfundingrates?symbol=$KS{$coin}")); my $cut = strftime('%Y-%m-%d', gmtime($NOW - 400 * 86400));
+    if (ref $d eq 'HASH' && ref $d->{rates} eq 'ARRAY') { for (@{$d->{rates}}) { my $dt = substr($_->{timestamp}, 0, 10); $a{$dt} += $_->{relativeFundingRate} if $dt ge $cut } } $src{Kraken} = \%a; }
+  { my %a; my %DS = (BTC => 'BTC-PERPETUAL', ETH => 'ETH-PERPETUAL', SOL => 'SOL_USDC-PERPETUAL');                                  # Deribit: hourly, at most 744 rows a call, so 30-day windows
+    for my $pg (0..12) { my ($e, $s) = (($NOW - $pg * 30 * 86400) * 1000, ($NOW - ($pg + 1) * 30 * 86400) * 1000 + 1);
+      my $d = js(curl("https://www.deribit.com/api/v2/public/get_funding_rate_history?instrument_name=$DS{$coin}&start_timestamp=$s&end_timestamp=$e")); last unless ref $d eq 'HASH' && ref $d->{result} eq 'ARRAY' && @{$d->{result}};
+      $a{day($_->{timestamp})} += $_->{interest_1h} for @{$d->{result}}; sleep(0.2) } $src{Deribit} = \%a; }
+  for my $v (qw(OKX Hyperliquid Kraken Deribit)) {
     my ($daily, $fresh) = merge_daily($coin, $v, $src{$v}); my @k = sort keys %$daily; $all_fresh = 0 unless $fresh > 0; next unless @k;
     my %st; for my $w (7, 30, 90, 365) { my @x; for my $i (1..$w) { my $dt = strftime('%Y-%m-%d', gmtime($NOW - $i * 86400)); push @x, $daily->{$dt} if defined $daily->{$dt} }
       $st{"d$w"} = rd(mean(@x) * 365 / 100, 2) if @x >= .8 * $w; }

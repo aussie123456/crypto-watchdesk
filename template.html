@@ -126,7 +126,7 @@ details summary{cursor:pointer;color:var(--ink2)}
     <summary><b>Method, sources and limits</b></summary>
     <div id="method" style="margin-top:10px;color:var(--ink2);max-width:900px"></div>
   </details>
-  <p class="foot">Built from public exchange data only (OKX, Hyperliquid, Binance, Bybit, CoinGecko, Yahoo Finance). Figures can be wrong or stale; nothing here is investment advice or a recommendation to buy or sell.</p>
+  <p class="foot">Built from public exchange data only (OKX, Hyperliquid, Kraken, Deribit, CoinGecko, Yahoo Finance). Figures can be wrong or stale; nothing here is investment advice or a recommendation to buy or sell.</p>
 </div>
 <div id="tip"></div>
 <script type="application/json" id="d-data">{}</script>
@@ -145,7 +145,7 @@ function applyTH(){C.forEach(function(c){
  if(c.volx!=null&&c.volx>=TH.v)a.push('vol');
  if(c.momp>=80&&c.f7!=null&&c.f7>=TH.f)a.push('crowd');
  c.tags=a;c.swing=(zz||dd)?(c.r24<0?-1:1):ww?(c.r7<0?-1:1):0})}
-var VEN=[['OKX','--s1'],['Hyperliquid','--s2'],['Binance','--s3'],['Bybit','--s4']];
+var VEN=[['OKX','--s1'],['Hyperliquid','--s2'],['Kraken','--s3'],['Deribit','--s4']];
 var st={sort:'vol24',dir:-1,open:null,f:'',q:'',coin:'BTC'};
 function $(i){return document.getElementById(i)}
 function e(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
@@ -300,7 +300,7 @@ function method(){$('method').innerHTML=
  '<p><b>Universe.</b> The most-traded crypto USDT perpetual swaps on OKX by 24-hour dollar volume (OKX stock, pre-IPO and commodity perps and stablecoins are excluded). Prices and history are the perp, in US$.</p>'+
  '<p><b>Swing alerts.</b> σ move = the 24-hour log return divided by the standard deviation of the coin’s own daily returns over up to 200 days, so a 6% day in Bitcoin can rank above a 12% day in a small cap. An alert fires at the thresholds set at the top of the page (defaults: 3σ, a ±10% day, a ±30% week); they are adjustable and saved in your browser.</p>'+
  '<p><b>Momentum rank.</b> 7, 30 and 90-day returns, each divided by the volatility expected over that horizon, blended 20/40/40 and ranked 0 to 100 across the universe. Trend = price against its 20 and 50-day averages. Breakouts = price through the prior 20 or 55-day high or low. Volume = last 24 hours against the 30-day daily average.</p>'+
- '<p><b>Funding.</b> Perpetual longs pay shorts when funding is positive. Rates are annualised by simple multiplication (no compounding). Crowded long = top-quintile momentum with 7-day funding at or above the crowded-funding threshold (default 25% a year). The carry panel sums each venue’s funding by UTC day; the chart is a 30-day rolling average. Binance and Bybit block US-hosted servers, so on the scheduled run their history is carried forward from the last successful fetch and labelled as such.</p>'+
+ '<p><b>Funding.</b> Perpetual longs pay shorts when funding is positive. Rates are annualised by simple multiplication (no compounding). Crowded long = top-quintile momentum with 7-day funding at or above the crowded-funding threshold (default 25% a year). The carry panel sums each venue’s funding by UTC day; the chart is a 30-day rolling average. Venues are OKX, Hyperliquid, Kraken and Deribit (Binance and Bybit block the servers this page is built on, so they are left out). If a venue fails on one run, its past days are carried forward and labelled as such.</p>'+
  '<p><b>Limits.</b> Momentum in crypto reverses hard and gaps; funding is one venue’s rate at one moment; small perps can be thin and their funding extreme. Carry returns here ignore fees, the capital tied up as margin, basis moves on entry and exit, and exchange counterparty risk.</p>'+
  (D.log?'<details><summary>Build log</summary><pre class="small" style="white-space:pre-wrap">'+e(D.log.join('\n'))+'</pre></details>':'')}
 

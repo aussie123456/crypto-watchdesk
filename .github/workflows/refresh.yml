@@ -28,7 +28,7 @@ jobs:
         id: pages
         uses: actions/configure-pages@v5
 
-      - name: Fetch previously published data (carries Binance and Bybit funding history forward)
+      - name: Fetch previously published data (carries funding history forward)
         run: |
           curl -sSL --fail --max-time 60 -o previous.json "${{ steps.pages.outputs.base_url }}/data.json" || rm -f previous.json
           ls -l previous.json 2>/dev/null || echo "no previous data (first run)"
