@@ -44,8 +44,8 @@ select,input[type=search],input[type=number]{font:inherit;padding:6px 8px;border
 .tw{overflow-x:auto}
 table{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums}
 .dwrap{position:sticky;left:14px;max-width:min(1250px,calc(100vw - 92px))}
-td.sg{white-space:normal;min-width:200px}
-th,td{padding:6px 7px;border-bottom:1px solid var(--grid);text-align:right;white-space:nowrap}
+td.sg{white-space:normal;min-width:150px}
+th,td{padding:6px 6px;border-bottom:1px solid var(--grid);text-align:right;white-space:nowrap}
 th{font-size:12px;color:var(--ink2);font-weight:600;position:sticky;top:0;background:var(--surface)}
 th[data-k]{cursor:pointer;user-select:none}
 th.l,td.l{text-align:left}
@@ -169,8 +169,9 @@ function tiles(){
  var a50=C.filter(function(c){return c.d50!=null}),up50=a50.filter(function(c){return c.d50>0}).length;
  var a30=C.filter(function(c){return c.r30!=null}),up30=a30.filter(function(c){return c.r30>0}).length;
  var t=[];
- if(b)t.push(['US$'+px(b.px),'Bitcoin',sg(b.r24,1)+' 24h &middot; '+sg(b.r7,1)+' 7d']);
- if(et)t.push(['US$'+px(et.px),'Ether',sg(et.r24,1)+' 24h &middot; '+sg(et.r7,1)+' 7d']);
+ var chg=function(c){return sg(c.r1,1)+' 1h &middot; '+sg(c.r24,1)+' 24h<br>'+sg(c.r7,1)+' 7d &middot; '+sg(c.r30,1)+' 30d'};
+ if(b)t.push(['US$'+px(b.px),'Bitcoin',chg(b)]);
+ if(et)t.push(['US$'+px(et.px),'Ether',chg(et)]);
  t.push([sw,'Swing alerts','of '+n+' coins screened']);
  t.push([a50.length?Math.round(up50/a50.length*100)+'%':'n/a','Above 50-day average',up50+' of '+a50.length+' coins']);
  t.push([a30.length?Math.round(up30/a30.length*100)+'%':'n/a','Up over 30 days','median '+sg(med(a30.map(function(c){return c.r30})),1)]);
@@ -193,17 +194,17 @@ function scatter(){
   if(sw||lab[c.s]){var lx=X(c.r30),right=lx<W-80;h+='<text class="lab" x="'+(lx+(right?9:-9)).toFixed(1)+'" y="'+(Y(c.r7)+4).toFixed(1)+'" text-anchor="'+(right?'start':'end')+'" style="pointer-events:none">'+e(c.s)+'</text>'}});
  var s=$('sc');s.innerHTML=h;
  s.onmousemove=function(ev){var s2=ev.target.getAttribute&&ev.target.getAttribute('data-s');if(!s2)return hideTip();var c=by(s2);
-  showTip(ev,'<b>'+e(c.name)+' ('+e(c.s)+')</b><br>30d '+sg(c.r30,1)+' &middot; 7d '+sg(c.r7,1)+' &middot; 24h '+sg(c.r24,1)+'<br>Momentum rank '+f(c.momp,0)+' of 100<br>'+tags(c))};
+  showTip(ev,'<b>'+e(c.name)+' ('+e(c.s)+')</b><br>1h '+sg(c.r1,1)+' &middot; 24h '+sg(c.r24,1)+'<br>7d '+sg(c.r7,1)+' &middot; 30d '+sg(c.r30,1)+'<br>Momentum rank '+f(c.momp,0)+' of 100<br>'+tags(c))};
  s.onmouseleave=hideTip;
  s.onclick=function(ev){var s2=ev.target.getAttribute&&ev.target.getAttribute('data-s');if(s2)openRow(s2,true)}}
 
 function swings(){
  var a=C.filter(function(c){return c.swing}).sort(function(x,y){return Math.abs(y.z||0)-Math.abs(x.z||0)||Math.abs(y.r24)-Math.abs(x.r24)});
  $('swd').innerHTML='A day move of '+TH.z+' standard deviations or more against the coin’s own 200-day history, a day move of ±'+TH.d+'%, or a week move of ±'+TH.w+'%.';
- $('sw').innerHTML=a.length?a.map(function(c){return '<li data-s="'+e(c.s)+'"><b>'+e(c.s)+'</b> <span class="small">'+e(c.name)+'</span><span style="float:right">'+sg(c.r24,1)+' 24h'+(c.z!=null?' <span class="small">('+f(c.z,1)+'σ)</span>':'')+'</span><br><span class="small">7d '+sg(c.r7,1)+' &middot; 30d '+sg(c.r30,1)+' &middot; volume '+f(c.volx,1,'x')+' &middot; funding '+f(c.f7,0,'%')+'</span><br>'+tags(c)+'</li>'}).join(''):'<li class="small" style="cursor:default">No coin tripped a swing threshold on this run.</li>';
+ $('sw').innerHTML=a.length?a.map(function(c){return '<li data-s="'+e(c.s)+'"><b>'+e(c.s)+'</b> <span class="small">'+e(c.name)+'</span><span style="float:right">'+sg(c.r24,1)+' 24h'+(c.z!=null?' <span class="small">('+f(c.z,1)+'σ)</span>':'')+'</span><br><span class="small">1h '+sg(c.r1,1)+' &middot; 7d '+sg(c.r7,1)+' &middot; 30d '+sg(c.r30,1)+' &middot; volume '+f(c.volx,1,'x')+' &middot; funding '+f(c.f7,0,'%')+'</span><br>'+tags(c)+'</li>'}).join(''):'<li class="small" style="cursor:default">No coin tripped a swing threshold on this run.</li>';
  $('sw').onclick=function(ev){var li=ev.target.closest('li[data-s]');if(li)openRow(li.getAttribute('data-s'),true)}}
 
-var COLS=[['s','Coin','l'],['px','Price'],['r24','24h'],['z','σ move'],['r7','7d'],['r30','30d'],['r90','90d'],['momp','Momentum rank'],['trend','Trend','l'],['dd90','Off 90d high'],['volx','Volume'],['f7','Funding 7d'],['oi','Open interest'],['tags','Signals','l sg'],['spark','90 days','l']];
+var COLS=[['s','Coin','l'],['px','Price'],['r1','1h'],['r24','24h'],['z','σ move'],['r7','7d'],['r30','30d'],['r90','90d'],['momp','Momentum rank'],['trend','Trend','l'],['volx','Volume'],['f7','Funding 7d'],['oi','Open interest'],['tags','Signals','l sg'],['spark','90 days','l']];
 var FIL=[['','All coins'],['swing','Swing alerts'],['bo','Breakouts (20/55-day high)'],['bd','Breakdowns (20/55-day low)'],['up','Uptrend (price > 20d > 50d)'],['down','Downtrend'],['top','Top-quintile momentum'],['vol','Volume 2x+'],['crowd','Crowded long'],['squeeze','Shorts paying into a rally']];
 function pass(c){var k=st.f,t=c.tags||[];if(st.q&&(c.s+' '+c.name).toLowerCase().indexOf(st.q)<0)return false;
  return !k||(k==='swing'?!!c.swing:k==='bo'?c.brk>0:k==='bd'?c.brk<0:k==='up'?c.trend==='up':k==='down'?c.trend==='down':k==='top'?c.momp>=80:t.indexOf(k)>=0)}
@@ -212,7 +213,7 @@ function spark(c){var a=c.spark.slice(-90);if(a.length<2)return '';var lo=Math.m
 var TR={up:'Up',down:'Down',mixed:'Mixed',na:'n/a'};
 function cell(c,k){switch(k){
  case 's':return '<b>'+e(c.s)+'</b> <span class="small">'+e(c.name!==c.s?c.name:'')+'</span>';
- case 'px':return px(c.px);case 'r24':return sg(c.r24,1);case 'z':return c.z==null?NA:sg(c.z,1,'σ');
+ case 'px':return px(c.px);case 'r1':return sg(c.r1,1);case 'r24':return sg(c.r24,1);case 'z':return c.z==null?NA:sg(c.z,1,'σ');
  case 'r7':case 'r30':case 'r90':case 'dd90':return sg(c[k],1);case 'rs30':return sg(c.rs30,1,' pts');
  case 'momp':return c.momp==null?NA:'<span class="bar"><i style="width:'+c.momp+'%"></i></span>'+c.momp;
  case 'trend':return TR[c.trend]||'';case 'volx':return f(c.volx,1,'x');case 'f7':return c.f7==null?NA:sg(c.f7,1);
@@ -227,7 +228,7 @@ function table(){
  if(st.open){var c=by(st.open);if(c&&pass(c))wireDetail(c)}}
 function sma(a,n){var o=[],s=0;for(var i=0;i<a.length;i++){s+=a[i];if(i>=n)s-=a[i-n];o.push(i>=n-1?s/n:null)}return o}
 function detail(c){
- var kv=[['Price','US$'+px(c.px)],['Market cap',usd(c.mcap)],['Daily volatility (200d)',f(c.dvol,1,'%')],['Realised vol (30d, annualised)',f(c.rv30,0,'%')],['Vs 20-day average',sg(c.d20,1)],['Vs 50-day average',sg(c.d50,1)],['Vs 200-day average',sg(c.d200,1)],['Off 90-day high',sg(c.dd90,1)],
+ var kv=[['Price','US$'+px(c.px)],['1 hour',sg(c.r1,1)],['24 hours',sg(c.r24,1)],['7 days',sg(c.r7,1)],['30 days',sg(c.r30,1)],['90 days',sg(c.r90,1)],['Market cap',usd(c.mcap)],['Daily volatility (200d)',f(c.dvol,1,'%')],['Realised vol (30d, annualised)',f(c.rv30,0,'%')],['Vs 20-day average',sg(c.d20,1)],['Vs 50-day average',sg(c.d50,1)],['Vs 200-day average',sg(c.d200,1)],['Off 90-day high',sg(c.dd90,1)],
   ['Funding now (OKX, annualised)',c.f_now==null?NA:sg(c.f_now,1)],['Funding 7-day (OKX)',c.f7==null?NA:sg(c.f7,1)],['Funding now (Hyperliquid)',c.hl_now==null?NA:sg(c.hl_now,1)],['Open interest (OKX)',usd(c.oi)],['Open interest (Hyperliquid)',usd(c.hl_oi)],['30-day return vs Bitcoin',sg(c.rs30,1,' pts')],['24-hour volume (OKX perp)',usd(c.vol24)],['History',c.days+' days']];
  return '<div class="dwrap"><b>'+e(c.name)+' ('+e(c.s)+')</b> <span class="small">daily close, US$, with 50-day average</span><svg id="dc" viewBox="0 0 960 240" width="100%" role="img" aria-label="Price history"></svg>'+
   '<div class="legend"><span><i class="ln" style="background:var(--s1)"></i>Price</span><span><i class="ln" style="background:var(--s2)"></i>50-day average</span></div>'+

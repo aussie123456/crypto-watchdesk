@@ -78,6 +78,8 @@ for my $u (@uni) {
   my $ret = sub { my $k = shift; return undef if $n <= $k || !$cl[-1 - $k]; $cl[-1] / $cl[-1 - $k] - 1 };
   my %c = (s => $u->{s}, px => $u->{px}, vol24 => rd($u->{vol24}, 0), days => $n);
   my $r24 = $u->{px} / $u->{open} - 1; my ($r7, $r30, $r90) = ($ret->(7), $ret->(30), $ret->(90));
+  # 1-hour change: close of the 5-minute candle that ended 55-60 minutes ago
+  { my $m5 = okx("/api/v5/market/candles?instId=$u->{id}&bar=5m&limit=13"); if ($m5 && @$m5 >= 13 && $m5->[12][4] > 0) { $c{r1} = rd(($u->{px} / $m5->[12][4] - 1) * 100, 2) } }
   $c{r24} = rd($r24 * 100, 2); $c{r7} = rd($r7 * 100, 1) if defined $r7; $c{r30} = rd($r30 * 100, 1) if defined $r30; $c{r90} = rd($r90 * 100, 1) if defined $r90;
   if ($sg) { $c{z} = rd(log(1 + $r24) / $sg, 2); $c{dvol} = rd($sg * 100, 2);
     my ($num, $w) = (0, 0); for my $p ([7, $r7, .2], [30, $r30, .4], [90, $r90, .4]) { next unless defined $p->[1] && $p->[1] > -1; $num += $p->[2] * log(1 + $p->[1]) / ($sg * sqrt($p->[0])); $w += $p->[2] }
